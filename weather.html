@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="weather.css">
+</head>
+<body>
+  <div class="container">
+    <div class="search-container">
+      <input 
+        type="text" 
+        id="location-input" 
+        placeholder="Enter city name or click 'Get Location'"
+      >
+      <button onclick="getWeather()">Search</button>
+      <button onclick="getCurrentLocation()">Get Location</button>
+    </div>
+
+    <div id="error" class="error"></div>
+    <div id="loading" class="loading"></div>
+
+    <div id="weather-card" class="weather-card" style="display: none;">
+      <div class="location" id="location">Loading...</div>
+      <div class="temperature" id="temperature">--°C</div>
+      <div id="description">Loading...</div>
+      
+      <div class="weather-info">
+        <div class="info-item">
+          <div class="info-label">Feels Like</div>
+          <div class="info-value" id="feels-like">--°C</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Humidity</div>
+          <div class="info-value" id="humidity">--%</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Wind Speed</div>
+          <div class="info-value" id="wind-speed">-- km/h</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Pressure</div>
+          <div class="info-value" id="pressure">-- hPa</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Note: In a real application, you would need to replace 'YOUR_API_KEY' 
+    // with an actual OpenWeatherMap API key
+    const API_KEY = 'YOUR_API_KEY';
+    const weatherCard = document.getElementById('weather-card');
+    const errorDiv = document.getElementById('error');
+    const loadingDiv = document.getElementById('loading');
+
+    async function getWeather(lat = null, lon = null) {
+      const locationInput = document.getElementById('location-input');
+      let url;
+
+      try {
+        showLoading();
+        hideError();
+
+        if (lat && lon) {
+          url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`;
+        } else {
+          const city = locationInput.value.trim();
+          if (!city) {
+            showError('Please enter a city name');
+            return;
+          }
+          url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`;
+        }
+
+        // Simulate API call since we don't have a real API key
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const weatherData = await simulateWeatherData();
+
+        displayWeather(weatherData);
+      } catch (error) {
+        showError('Error fetching weather data. Please try again.');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    function getCurrentLocation() {
+      if (navigator.geolocation) {
+        showLoading();
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            getWeather(position.coords.latitude, position.coords.longitude);
+          },
+          error => {
+            showError('Unable to retrieve your location');
+            hideLoading();
+          }
+        );
+      } else {
+        showError('Geolocation is not supported by your browser');
+      }
+    }
+
+    function displayWeather(data) {
+      document.getElementById('location').textContent = data.name;
+      document.getElementById('temperature').textContent = 
+        `${Math.round(data.main.temp)}°C`;
+      document.getElementById('description').textContent = 
+        data.weather[0].description;
+      document.getElementById('feels-like').textContent = 
+        `${Math.round(data.main.feels_like)}°C`;
+      document.getElementById('humidity').textContent = 
+        `${data.main.humidity}%`;
+      document.getElementById('wind-speed').textContent = 
+        `${Math.round(data.wind.speed * 3.6)} km/h`;
+      document.getElementById('pressure').textContent = 
+        `${data.main.pressure} hPa`;
+
+      weatherCard.style.display = 'block';
+    }
+
+    function showError(message) {
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      weatherCard.style.display = 'none';
+    }
+
+    function hideError() {
+      errorDiv.style.display = 'none';
+    }
+
+    function showLoading() {
+      loadingDiv.style.display = 'block';
+      weatherCard.style.display = 'none';
+    }
+
+    function hideLoading() {
+      loadingDiv.style.display = 'none';
+    }
+
+    // Function to simulate weather data (since we don't have a real API key)
+    function simulateWeatherData() {
+      const locationInput = document.getElementById('location-input');
+      const city = locationInput.value.trim() || 'London';
+      
+      return {
+        name: city,
+        main: {
+          temp: 20 + Math.random() * 10,
+          feels_like: 19 + Math.random() * 10,
+          humidity: 50 + Math.random() * 30,
+          pressure: 1013 + Math.random() * 20
+        },
+        weather: [{
+          description: 'Partly cloudy'
+        }],
+        wind: {
+          speed: 5 + Math.random() * 5
+        }
+      };
+    }
+
+    // Add enter key support for search
+    document.getElementById('location-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        getWeather();
+      }
+    });
+  </script>
+</body>
+</html>
